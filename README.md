@@ -1,14 +1,72 @@
-Astral Heat Music for OHMSBY Style Characters v0.0.1
 
--- To Install, simply drag and drop this file to the external/mods/ folder.
--- To define astral heat music for your OHMSBY Style Character,
--- Simply go to your select.def and add this to your characters:
--- ", astral.music = chars/Ragna/Ragna.mp3" (without the quotes)
--- Your character should be looking like this now:
--- Ragna, astral.music = chars/Ragna/Ragna.mp3
--- you can even define the volume, loop, loopstart, loopend, startposition and so on! (i haven't tested some of these parameters yet)
---
--- you can have the music be anywhere ikemen go's directory, and even have multiple characters have the same astral bgm like the RWBY characters.
---
--- Additional Note: the astral heat music doesn't play as soon as you attempt an astral heat. the music plays once you successfully land the astral heat.
--- This module will only work for the recent nightly builds.
+# Astral Heat Music for OHMSBY Style Characters v0.0.1
+
+
+This module enables custom **Astral Heat BGM** for OHMSBY-style characters in **IKEMEN GO**, using parameters defined in `select.def`.
+
+---
+
+## Credits
+
+Commissioned by **SkeleJ64**
+
+---
+
+## Installation
+
+1. Download the module.
+2. Drag and drop the **.lua** file into:
+
+
+external/mods/
+
+````
+
+---
+
+## Usage
+
+To define Astral Heat music for an OHMSBY-style character, open your `select.def` and add the following to the character entry:
+
+```ini
+, astral.music = sound/astral_music.mp3
+````
+
+Your character entry should look like this:
+
+```ini
+Ragna, astral.music = chars/Ragna/Ragna.mp3
+```
+
+---
+
+## Optional Parameters
+
+You can also define additional music parameters:
+
+```ini
+astral.volume
+astral.loop
+astral.loopstart
+astral.loopend
+astral.startposition
+astral.freqmul
+astral.loopcount
+```
+
+Example:
+
+```ini
+Ragna,
+    astral.music = chars/Ragna/Ragna.mp3,
+    astral.volume = 100,
+    astral.loop = -1
+```
+
+---
+
+## Notes
+
+* The Astral Heat music **does not play immediately** when the Astral Heat is attempted.
+* The music will play **only after the Astral Heat successfully lands**.
+* Multiple characters can share the same Astral Heat BGM (e.g. RWBY characters).
