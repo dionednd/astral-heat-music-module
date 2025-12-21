@@ -1,13 +1,12 @@
 -- Astral Heat BGM Player for OHMSBY Style Characters
--- v 0.0.3
+-- v 0.0.3a
 -- Commissioned by SkeleJ64
 
 AstralHeatBGMPlayed = {}
 
 function f_AstralHeatBGM()
 	if roundstate() ~= 2 then return end
-	local nump = numenemy() + numpartner() + 1
-	for p = 1, nump do
+	for p = 1, 8 do
 		player(p)
 		if var(20) == 1
 		and not AstralHeatBGMPlayed[p]
