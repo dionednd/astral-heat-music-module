@@ -17,10 +17,9 @@ Commissioned by **SkeleJ64**
 1. Download the module.
 2. Drag and drop the **.lua** file into:
 
-
+```ini
 external/mods/
-
-````
+```
 
 ---
 
@@ -82,3 +81,4 @@ Ragna,
 * The Astral Heat music **does not play immediately** when the Astral Heat is attempted.
 * The music will play **only after the Astral Heat successfully lands**.
 * Multiple characters can share the same Astral Heat BGM (e.g. RWBY characters).
+* The Rival's Name should be the character's **name**, not **displayname**.
