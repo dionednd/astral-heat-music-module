@@ -45,13 +45,13 @@ Ragna, astral.music = chars/Ragna/Ragna.mp3
 You can also define additional music parameters:
 
 ```ini
-astral.bgmvolume
-astral.bgmloop
-astral.bgmloopstart
-astral.bgmloopend
-astral.bgmstartposition
-astral.bgmfreqmul
-astral.bgmloopcount
+astral.volume
+astral.loop
+astral.loopstart
+astral.loopend
+astral.btartposition
+astral.freqmul
+astral.loopcount
 ```
 
 Example:
@@ -59,8 +59,8 @@ Example:
 ```ini
 Ragna,
     astral.music = chars/Ragna/Ragna.mp3,
-    astral.bgmvolume = 100,
-    astral.bgmloop = 0
+    astral.volume = 100,
+    astral.loop = 0
 ```
 
 ---
