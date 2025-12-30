@@ -1,5 +1,5 @@
 
-# Astral Heat Music for OHMSBY Style Characters v0.0.4a
+# Astral Heat Music for OHMSBY Style Characters v0.0.4b
 
 
 This module enables custom **Astral Heat BGM** for OHMSBY-style characters in **IKEMEN GO**, using parameters defined in `select.def`.
@@ -52,15 +52,15 @@ astral.btartposition
 astral.freqmul
 astral.loopcount
 
-rival[1-9]name
-rival[1-9].music
-rival[1-9].volume
-rival[1-9].loop
-rival[1-9].loopstart
-rival[1-9].loopend
-rival[1-9].btartposition
-rival[1-9].freqmul
-rival[1-9].loopcount
+rival[1-32]name
+rival[1-32].music
+rival[1-32].volume
+rival[1-32].loop
+rival[1-32].loopstart
+rival[1-32].loopend
+rival[1-32].btartposition
+rival[1-32].freqmul
+rival[1-32].loopcount
 ```
 
 Example:
