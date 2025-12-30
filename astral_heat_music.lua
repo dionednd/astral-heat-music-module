@@ -1,8 +1,9 @@
 -- Astral Heat BGM Player
--- v0.0.4a
+-- v0.0.4b
 -- Commissioned by SkeleJ64
 
 AstralHeatBGMPlayed = {}
+AstralRivalTrack = {}
 
 function f_AstralHeatBGM()
 	if roundstate() ~= 2 then return end
@@ -21,16 +22,18 @@ function f_AstralHeatBGM()
 			oppName=name()
 			player(p)
 
-			local track = "charparams.astral"
-			for i = 1, 9 do
-				local key = "rival" .. i .. "name"
-				local riv = main.t_selChars[start.c[p].selRef + 1][key]
-				if riv ~= "" and riv == oppName then
-					local rMusic = "charparams.rival" .. i
-					track = rMusic
-					break
+			if not AstralRivalTrack[p] then
+				for i = 1, 32 do
+					local riv = main.t_selChars[start.c[p].selRef + 1]["rival" .. i .. "name"]
+					 if riv ~= "" and riv == oppName then
+						AstralRivalTrack[p] = "charparams.rival" .. i
+						break
+					end
 				end
 			end
+
+			local track = AstralRivalTrack[p] or "charparams.astral"
+
 
 			if track == "" then track = "charparams.astral" end
 
@@ -38,6 +41,7 @@ function f_AstralHeatBGM()
 				source = track,
 				interrupt = true,
 			})
+			break
 			
 		elseif var(20) ~= 1 then
 			AstralHeatBGMPlayed[p] = false
