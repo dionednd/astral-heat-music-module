@@ -1,5 +1,5 @@
 
-# Astral Heat Music for OHMSBY Style Characters v0.0.4
+# Astral Heat Music for OHMSBY Style Characters v0.0.4a
 
 
 This module enables custom **Astral Heat BGM** for OHMSBY-style characters in **IKEMEN GO**, using parameters defined in `select.def`.
