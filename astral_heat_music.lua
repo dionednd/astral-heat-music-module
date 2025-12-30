@@ -1,5 +1,5 @@
 -- Astral Heat BGM Player
--- v0.0.4
+-- v0.0.4a
 -- Commissioned by SkeleJ64
 
 AstralHeatBGMPlayed = {}
@@ -17,7 +17,7 @@ function f_AstralHeatBGM()
 			AstralHeatBGMPlayed[p] = true
 			
 			local oppName = ""
-			enemy(0)
+			enemynear(0)
 			oppName=name()
 			player(p)
 
