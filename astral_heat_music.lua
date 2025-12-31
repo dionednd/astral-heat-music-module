@@ -1,50 +1,65 @@
 -- Astral Heat BGM Player
--- v0.0.4b
+-- v0.0.4c
 -- Commissioned by SkeleJ64
 
-AstralHeatBGMPlayed = {}
-AstralRivalTrack = {}
+local AstralHeatBGMPlayed = {}
+
+local Authors = {
+	["OHMSBY"] = true,
+	["Ichida"] = true,
+	["Vinnie"] = true,
+	["Resentone"] = true,
+	["TornilloOxidado"] = true,
+	["HakiKing"] = true,
+	["ZolidSone"] = true,
+	["JoeyS"] = true,
+	["dionednd"] = true,
+}
+
 
 function f_AstralHeatBGM()
-	if roundstate() ~= 2 then return end
-	
-	for p = 1, 8 do
-		player(p)
-
-		if var(20) == 1 
-		and not AstralHeatBGMPlayed[p] 
-		and playerno() == teamleader() then
+	-- if roundstate() ~= 2 then return end
+	for side = 1, 2 do
+		for _, v in pairs(start.p[side].t_selected) do
+			if player(v.pn) then
+				local author = authorname()
+				if var(20) == 1 
+				and not AstralHeatBGMPlayed[v.pn] 
+				and playerno() == teamleader()
+				and Authors[author] then
+				
+					AstralHeatBGMPlayed[v.pn] = true
 			
-			AstralHeatBGMPlayed[p] = true
-			
-			local oppName = ""
-			enemynear(0)
-			oppName=name()
-			player(p)
-
-			if not AstralRivalTrack[p] then
-				for i = 1, 32 do
-					local riv = main.t_selChars[start.c[p].selRef + 1]["rival" .. i .. "name"]
-					 if riv ~= "" and riv == oppName then
-						AstralRivalTrack[p] = "charparams.rival" .. i
-						break
+					local oppName = ""
+					if enemynear(0) then
+						oppName=name()
 					end
+					player(v.pn)
+
+					local track = "charparams.astral"
+
+					for i = 1, 32 do
+						local key = "rival" .. i .. "name"
+						local rival = start.f_getCharData(v.ref)[key]
+						
+						if rival == oppName then
+							local rMusic = "charparams.rival" .. i
+							track = rMusic
+							break
+						end
+					end
+
+					if track == "" then track = "charparams.astral" end
+
+					playBgm({
+						source = track,
+						interrupt = true,
+					})
+			
+				elseif var(20) ~= 1 then
+					AstralHeatBGMPlayed[v.pn] = false
 				end
 			end
-
-			local track = AstralRivalTrack[p] or "charparams.astral"
-
-
-			if track == "" then track = "charparams.astral" end
-
-			playBgm({
-				source = track,
-				interrupt = true,
-			})
-			break
-			
-		elseif var(20) ~= 1 then
-			AstralHeatBGMPlayed[p] = false
 		end
 	end
 end
