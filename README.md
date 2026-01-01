@@ -1,5 +1,5 @@
 
-# Astral Heat Music for OHMSBY Style Characters v0.0.4c
+# Astral Heat Music for OHMSBY Style Characters v0.0.4d
 
 
 This module enables custom **Astral Heat BGM** for OHMSBY-style characters in **IKEMEN GO**, using parameters defined in `select.def`.
@@ -82,3 +82,4 @@ Ragna,
 * The music will play **only after the Astral Heat successfully lands**.
 * Multiple characters can share the same Astral Heat BGM (e.g. RWBY characters).
 * The Rival's Name should be the character's **name**, not **displayname**.
+* Rival Themes **DO NOT WORK** on Turns Team Mode. if i ever find a solution to this issue, i will update this module as soon as possible.
