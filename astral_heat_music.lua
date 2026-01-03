@@ -1,5 +1,5 @@
 -- Astral Heat BGM Player
--- v0.0.4d
+-- v0.0.4e
 -- Commissioned by SkeleJ64
 
 local AstralHeatBGMPlayed = {}
@@ -17,15 +17,24 @@ local Authors = {
 	["dionednd"] = true,
 	["Rouuuu"] = true,
 	["OWO"] = true,
-	["Forla"] = true,
 }
-
 
 function f_AstralHeatBGM()
 	if gamemode() == "demo" then return end -- to prevent game from crashing, we do not load the module during demo mode.
 	for side = 1, 2 do
 		for member, v in pairs(start.p[side].t_selected) do
-			local pn = 2 * (member - 1) + side
+			
+			if teammode() == "turns" then
+				player(side)
+				if start.f_getCharData(v.ref).name == displayname() and start.f_getCharData(v.ref).author == authorname() then
+					pn = side
+				else
+					pn = 69420 -- for the memes
+				end
+			else
+				pn = 2 * (member - 1) + side
+			end
+
 			if player(pn) then
 
 				local author = authorname()
@@ -42,16 +51,13 @@ function f_AstralHeatBGM()
 					player(pn)
 
 					local track = "charparams.astral"
-					if teammode() ~= "turns" then -- disable for turns mode. will come back to this when i find a way how to fix rival themes for turns mode.
-												-- the issue is that in turns mode, player numbers are always 1 and 2, so when fetching the rivalname, it always returns p1 and p2's rivalname values.
-						for i = 1, 32 do
-							local key = "rival" .. i .. "name"
-							rival[pn] = start.f_getCharData(v.ref)[key]
-							if rival[pn] and rival[pn] == oppName[pn] then
-								local rMusic = "charparams.rival" .. i
-								track = rMusic
-								break
-							end
+					for i = 1, 32 do
+						local key = "rival" .. i .. "name"
+						rival[pn] = start.f_getCharData(v.ref)[key]
+						if rival[pn] and rival[pn] == oppName[pn] then
+							local rMusic = "charparams.rival" .. i
+							track = rMusic
+							break
 						end
 					end
 
