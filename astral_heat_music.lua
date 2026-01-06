@@ -1,5 +1,5 @@
 -- Astral Heat BGM Player
--- v0.0.4e
+-- v0.0.4f
 -- Commissioned by SkeleJ64
 
 local AstralHeatBGMPlayed = {}
@@ -13,10 +13,11 @@ local Authors = {
 	["TornilloOxidado"] = true,
 	["HakiKing"] = true,
 	["ZolidSone"] = true,
-	["JoeyS"] = true,
+	["JOHMSBY"] = true,
 	["dionednd"] = true,
 	["Rouuuu"] = true,
 	["OWO"] = true,
+	["RagingRowen"] = true,
 }
 
 function f_AstralHeatBGM()
