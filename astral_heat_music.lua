@@ -21,7 +21,7 @@ local Authors = {
 }
 
 function f_AstralHeatBGM()
-	if gamemode() == "demo" then return end -- to prevent game from crashing, we do not load the module during demo mode.
+	if gameMode() == "demo" then return end -- to prevent game from crashing, we do not load the module during demo mode.
 	for side = 1, 2 do
 		for member, v in pairs(start.p[side].t_selected) do
 			
