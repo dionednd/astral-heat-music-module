@@ -1,5 +1,5 @@
 -- Astral Heat BGM Player
--- v0.0.4f
+-- v0.0.4h
 -- Commissioned by SkeleJ64
 
 local AstralHeatBGMPlayed = {}
@@ -25,9 +25,9 @@ function f_AstralHeatBGM()
 	for side = 1, 2 do
 		for member, v in pairs(start.p[side].t_selected) do
 			
-			if teammode() == "turns" then
+			if teamMode() == "turns" then
 				player(side)
-				if start.f_getCharData(v.ref).name == displayname() and start.f_getCharData(v.ref).author == authorname() then
+				if start.f_getCharData(v.ref).name == displayName() and start.f_getCharData(v.ref).author == authorName() then
 					pn = side
 				else
 					pn = 69420 -- for the memes
@@ -38,16 +38,16 @@ function f_AstralHeatBGM()
 
 			if player(pn) then
 
-				local author = authorname()
+				local author = authorName()
 				if var(20) == 1 
 				and not AstralHeatBGMPlayed[pn] 
-				and playerno() == teamleader()
+				and playerNo() == teamLeader()
 				and Authors[author] 
-				and roundstate() == 2 then
+				and roundState() == 2 then
 				
 					AstralHeatBGMPlayed[pn] = true
 
-					enemynear(0)
+					enemyNear(0)
 					oppName[pn]=name()
 					player(pn)
 
