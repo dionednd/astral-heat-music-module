@@ -1,8 +1,12 @@
 -- Astral Heat BGM Player
--- v0.0.4h
+-- v0.0.5
 -- Commissioned by SkeleJ64
 
 local AstralHeatBGMPlayed = {}
+local AstralHeatState = {}
+local AstralMusicFade = {}
+local PrevMusic = {}
+local fadeStartVol = 0
 local oppName = {}
 local rival = {}
 local Authors = {
@@ -19,6 +23,8 @@ local Authors = {
 	["OWO"] = true,
 	["RagingRowen"] = true,
 }
+
+local dur = 0
 
 function f_AstralHeatBGM()
 	if gameMode() == "demo" then return end -- to prevent game from crashing, we do not load the module during demo mode.
@@ -38,14 +44,28 @@ function f_AstralHeatBGM()
 
 			if player(pn) then
 
+				if roundState() <= 1 then
+					AstralHeatState[pn] = 0
+					AstralMusicFade[pn] = 0
+				end
+
 				local author = authorName()
-				if var(20) == 1 
+				if stateNo() == 3900 and moveHitVar('frame')
 				and not AstralHeatBGMPlayed[pn] 
 				and playerNo() == teamLeader()
 				and Authors[author] 
 				and roundState() == 2 then
-				
+					AstralHeatState[pn] = 1
 					AstralHeatBGMPlayed[pn] = true
+
+					PrevMusic["filename"] = bgmVar('filename')
+					PrevMusic["position"] = bgmVar('position')
+					PrevMusic["loop"] = bgmVar('loop')
+					PrevMusic["loopstart"] = bgmVar('loopstart')
+					PrevMusic["loopend"] = bgmVar('loopend')
+					PrevMusic["loopcount"] = bgmVar('loop')
+					PrevMusic["volume"] = bgmVar('volume')
+					PrevMusic["freqmul"] = bgmVar('freqmul')
 
 					enemyNear(0)
 					oppName[pn]=name()
@@ -69,6 +89,50 @@ function f_AstralHeatBGM()
 			
 				elseif var(20) ~= 1 then
 					AstralHeatBGMPlayed[pn] = false
+				end
+
+				if var(20) == 1 and (not isAsserted('timerfreeze')) and roundState() == 2 and AstralHeatState[pn] == 1 then
+					dur = 50
+
+					AstralHeatState[pn] = 2
+					AstralMusicFade[pn] = fightTime()
+					fadeStartVol = bgmVar('volume')
+					printConsole(fadeStartVol)
+				end
+				if AstralHeatState[pn] == 2 then
+					local t = math.min(dur, fightTime() - AstralMusicFade[pn])
+					local fadeVol = math.floor(fadeStartVol * math.max(0.0, 1.0 - t / dur))
+					playBgm({volume = fadeVol, interrupt = false})
+					-- updateVolume()
+					printConsole(math.floor(fadeVol))
+					if fadeVol == 0 then
+						playBgm({
+							bgm = PrevMusic["filename"],
+							volume = fadeVol,
+							loop = PrevMusic["loop"],
+							loopcount = PrevMusic["loopcount"],
+							loopstart = PrevMusic["loopstart"],
+							loopend = PrevMusic["loopend"],
+							startposition = PrevMusic["position"],
+							freqmul = PrevMusic["freqmul"],
+						}) -- replay previous music and fade it in
+						AstralHeatState[pn] = 3
+						AstralMusicFade[pn] = fightTime()
+						fadeStartVol = PrevMusic["volume"]
+						printConsole(fadeStartVol)
+					end
+				end
+				if AstralHeatState[pn] == 3 then
+					local t = math.min(dur, fightTime() - AstralMusicFade[pn])
+					local fadeVol = math.floor(fadeStartVol * math.min(1.0, t / dur))
+					playBgm({volume = fadeVol, interrupt = false})
+					-- updateVolume()
+					printConsole(fadeVol)
+					if t >= dur then
+						AstralHeatState[pn] = 0
+						AstralMusicFade[pn] = nil
+						fadeStartVol = nil
+					end
 				end
 			end
 		end
