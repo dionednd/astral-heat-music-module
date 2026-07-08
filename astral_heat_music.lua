@@ -1,5 +1,5 @@
 -- Astral Heat BGM Player
--- v0.0.5
+-- v0.0.5a
 -- Commissioned by SkeleJ64
 
 local AstralHeatBGMPlayed = {}
@@ -50,7 +50,7 @@ function f_AstralHeatBGM()
 				end
 
 				local author = authorName()
-				if stateNo() == 3900 and moveHitVar('frame')
+				if stateNo() >= 3900 and stateNo() <= 3999 and moveHitVar('frame')
 				and not AstralHeatBGMPlayed[pn] 
 				and playerNo() == teamLeader()
 				and Authors[author] 
