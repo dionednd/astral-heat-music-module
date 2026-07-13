@@ -1,5 +1,5 @@
 -- Astral Heat BGM Player
--- v0.0.5a
+-- v0.0.5b
 -- Commissioned by SkeleJ64
 
 local AstralHeatBGMPlayed = {}
@@ -27,7 +27,7 @@ local Authors = {
 local dur = 0
 
 function f_AstralHeatBGM()
-	if gameMode() == "demo" then return end -- to prevent game from crashing, we do not load the module during demo mode.
+
 	for side = 1, 2 do
 		for member, v in pairs(start.p[side].t_selected) do
 			
