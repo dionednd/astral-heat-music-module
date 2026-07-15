@@ -1,5 +1,5 @@
 -- Astral Heat BGM Player
--- v0.0.5b
+-- v0.0.5c
 -- Commissioned by SkeleJ64
 
 local AstralHeatBGMPlayed = {}
@@ -27,7 +27,6 @@ local Authors = {
 local dur = 0
 
 function f_AstralHeatBGM()
-
 	for side = 1, 2 do
 		for member, v in pairs(start.p[side].t_selected) do
 			
@@ -72,9 +71,12 @@ function f_AstralHeatBGM()
 					player(pn)
 
 					local track = "charparams.astral"
-					for i = 1, 32 do
+					
+					local charData = start.f_getCharData(v.ref)
+
+					for i = 1, 999 do
 						local key = "rival" .. i .. "name"
-						rival[pn] = start.f_getCharData(v.ref)[key]
+						rival[pn] = charData[key]
 						if rival[pn] and rival[pn] == oppName[pn] then
 							local rMusic = "charparams.rival" .. i
 							track = rMusic
