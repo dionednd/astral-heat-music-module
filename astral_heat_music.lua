@@ -1,279 +1,431 @@
 -- Astral Heat BGM Player
--- v0.0.6
+-- v0.0.7
 -- Commissioned by SkeleJ64
 
-local AstralHeatBGMPlayed = {}
-local AstralHeatState = {}
-local AstralMusicFade = {}
-local PrevMusic = {}
-local fadeStartVol = 0
-local oppName = {}
-local Authors = {
-	["OHMSBY"] = true,
-	["Ichida"] = true,
-	["Vinnie"] = true,
-	["Resentone"] = true,
-	["TornilloOxidado"] = true,
-	["HakiKing"] = true,
-	["ZolidSone"] = true,
-	["JOHMSBY"] = true,
-	["dionednd"] = true,
-	["Rouuuu"] = true,
-	["OWO"] = true,
-	["RagingRowen"] = true,
+local floor = math.floor
+local min = math.min
+local max = math.max
+
+local gsub = string.gsub
+local gmatch = string.gmatch
+
+local STATE_IDLE = 0
+local STATE_PLAYING = 1
+local STATE_FADE_OUT = 2
+local STATE_FADE_IN = 3
+
+local ASTRAL_FIRST = 3900
+local ASTRAL_LAST = 3999
+
+local FADE_TIME = 50
+
+local VALID_AUTHORS = {
+	OHMSBY = true,
+	Ichida = true,
+	Vinnie = true,
+	Resentone = true,
+	TornilloOxidado = true,
+	HakiKing = true,
+	ZolidSone = true,
+	JOHMSBY = true,
+	dionednd = true,
+	Rouuuu = true,
+	OWO = true,
+	RagingRowen = true,
 }
 
-local dur = 0
+local PlayerState = {}
+local ActivePlayers = {}
+local Initialized = false
+
+local function getPlayerState(pn)
+
+	local state = PlayerState[pn]
+
+	if state then
+		return state
+	end
+
+	state = {
+		state = STATE_IDLE,
+		played = false,
+		fadeFrame = 0,
+		fadeStart = 0,
+		opponent = nil,
+		prevMusic = {
+			filename = nil,
+			position = 0,
+			volume = 100,
+			loop = false,
+			loopcount = 0,
+			loopstart = 0,
+			loopend = 0,
+			freqmul = 1,
+		},
+	}
+
+	PlayerState[pn] = state
+
+	return state
+
+end
 
 local function parseRivalName(value)
+
 	if type(value) ~= "string" then
-		return value
+		return {}
 	end
 
-	if value:sub(1, 1) ~= "{" or value:sub(-1) ~= "}" then
-		return value
+	local names = {}
+
+	if value:sub(1,1) == "{"
+	and value:sub(-1) == "}" then
+		local contents =
+			value:sub(2,-2)
+		for name in gmatch(contents, "[^/]+") do
+			name = gsub(name,"^%s*(.-)%s*$","%1")
+			names[name] = true
+		end
+	else
+		value = gsub(value,"^%s*(.-)%s*$","%1")
+		names[value] = true
 	end
 
-	local tbl = {}
-	local contents = value:sub(2, -2)
+	return names
 
-	for name in string.gmatch(contents, "[^/]+") do
-		name = string.gsub(name, "^%s+", "")
-		name = string.gsub(name, "%s+$", "")
-		table.insert(tbl, name)
-	end
-
-	return tbl
 end
 
 local function parseRivalData(chardata)
-	rivals = {}
-	rivals.lookup = {}
 
-	for key, value in pairs(chardata) do
+	local rivals = {
+		lookup = {}
+	}
+
+	for key,value in pairs(chardata) do
 		local num = key:match("^rival(%d+)name$")
 		if num then
 			local id = tonumber(num)
-			local prefix = "rival" .. num
-
-			local rivalNames = parseRivalName(value)
-
-			rivals[id] = {
-				name = rivalNames,
-				music = chardata[prefix .. ".music"],
-				volume = chardata[prefix .. ".volume"],
-				loop = chardata[prefix .. ".loop"],
-				loopstart = chardata[prefix .. ".loopstart"],
-				loopend = chardata[prefix .. ".loopend"],
-				startposition = chardata[prefix .. ".startposition"],
-				freqmul = chardata[prefix .. ".freqmul"],
-				loopcount = chardata[prefix .. ".loopcount"],
+			local prefix = "rival"..num
+			local names = parseRivalName(value)
+			local rival = {
+				id = id,
+				names = names,
+				track = "charparams.rival"..id,
+				music = chardata[prefix..".music"],
+				volume = chardata[prefix..".volume"],
+				loop = chardata[prefix..".loop"],
+				loopstart = chardata[prefix..".loopstart"],
+				loopend = chardata[prefix..".loopend"],
+				startposition = chardata[prefix..".startposition"],
+				freqmul = chardata[prefix..".freqmul"],
+				loopcount = chardata[prefix..".loopcount"],
 			}
 
-			if type(rivalNames) == "table" then
-				for i = 1, #rivalNames do
-					rivals.lookup[rivalNames[i]] = id
+			rivals[id] = rival
+
+			if type(names) == "table" then
+				for name in pairs(names) do
+					rivals.lookup[name] = rival
 				end
 			else
-				rivals.lookup[rivalNames] = id
+				rivals.lookup[names] = rival
 			end
 		end
 	end
 
 	return rivals
+
 end
 
-local function characterExists(list, name)
-	for i = 1, #list do
-		if list[i] == name then
-			return true
+local function getPlayerNumber(side, member, charData)
+
+	if teamMode() == "turns" then
+		player(side)
+		if charData.name == displayName()
+		and charData.author == authorName() then
+			return side
 		end
+		return nil
 	end
-	return false
+
+	return 2 * (member - 1) + side
+
 end
 
-function f_AstralHeatBGM()
+local function buildActivePlayers()
 
-	if fightTime() == 1 then
-		local existingCharacters = {}
-		for side = 1, 2 do
-			for member, v in pairs(start.p[side].t_selected) do
-				if teamMode() == "turns" then
-					player(side)
-					if start.f_getCharData(v.ref).name == displayName() and start.f_getCharData(v.ref).author == authorName() then
-						pn = side
-					else
-						pn = 69420 -- for the memes
-					end
-				else
-					pn = 2 * (member - 1) + side
-				end
+	ActivePlayers = {}
 
-				if player(pn) then
-					existingCharacters[name()] = true
-					local pdata = start.f_getCharData(v.ref)
+	for side = 1,2 do
 
-					if start.p[side].t_selected[member].rivals == nil then
-						start.p[side].t_selected[member].rivals = parseRivalData(pdata)
-					end
-				end
-			end
-		end
-		for side = 1, 2 do
-			for member, v in pairs(start.p[side].t_selected) do
-				local rivals = start.p[side].t_selected[member].rivals
+		local selected =
+			start.p[side].t_selected
 
-				if rivals then
-					for id, rival in pairs(rivals) do
-						if id ~= "lookup" then
+		for member = 1,#selected do
 
-							if type(rival.name) == "table" then
-								local filteredNames = {}
+			local character =
+				selected[member]
 
-								for i = 1, #rival.name do
-									local rivalName = rival.name[i]
+			local pdata =
+				start.f_getCharData(character.ref)
 
-									if existingCharacters[rivalName] then
-										table.insert(filteredNames, rivalName)
-									end
-								end
+			local pn = getPlayerNumber(side, member, pdata)
 
-								rival.name = filteredNames
-
-								if #filteredNames == 0 then
-									rivals[id] = nil
-								else
-									for i = 1, #filteredNames do
-										rivals.lookup[filteredNames[i]] = id
-									end
-								end
-
-							elseif type(rival.name) == "string" then
-								if existingCharacters[rival.name] then
-									rivals.lookup[rival.name] = id
-								else
-									rivals[id] = nil
-								end
-							end
-						end
-					end
-				end
+			if pn then
+				local playerData = {
+					pn = pn,
+					side = side,
+					member = member,
+					ref = character.ref,
+					pdata = pdata,
+					rivals = nil,
+				}
+				playerData.rivals = parseRivalData(pdata)
+				ActivePlayers[#ActivePlayers+1] = playerData
 			end
 		end
 	end
+end
 
-	for side = 1, 2 do
-		for member, v in pairs(start.p[side].t_selected) do
-			
-			if teamMode() == "turns" then
-				player(side)
-				if start.f_getCharData(v.ref).name == displayName() and start.f_getCharData(v.ref).author == authorName() then
-					pn = side
-				else
-					pn = 69420 -- for the memes
-				end
-			else
-				pn = 2 * (member - 1) + side
-			end
+local function initializeMatch()
 
-			if player(pn) then
+	if Initialized then
+		return
+	end
+	buildActivePlayers()
+	Initialized = true
 
-				if roundState() <= 1 then
-					AstralHeatState[pn] = 0
-					AstralMusicFade[pn] = 0
-				end
+end
 
-				local author = authorName()
-				if stateNo() >= 3900 and stateNo() <= 3999 and moveHitVar('frame')
-				and not AstralHeatBGMPlayed[pn] 
-				and playerNo() == teamLeader()
-				and Authors[author] 
-				and roundState() == 2 then
-					AstralHeatState[pn] = 1
-					AstralHeatBGMPlayed[pn] = true
+local function resetMatch()
 
-					PrevMusic["filename"] = bgmVar('filename')
-					PrevMusic["position"] = bgmVar('position')
-					PrevMusic["loop"] = bgmVar('loop')
-					PrevMusic["loopstart"] = bgmVar('loopstart')
-					PrevMusic["loopend"] = bgmVar('loopend')
-					PrevMusic["loopcount"] = bgmVar('loop')
-					PrevMusic["volume"] = bgmVar('volume')
-					PrevMusic["freqmul"] = bgmVar('freqmul')
+	Initialized = false
+	ActivePlayers = {}
+	PlayerState = {}
 
-					enemyNear(0)
-					oppName[pn]=name()
-					player(pn)
+end
 
-					local track = "charparams.astral"
+local function saveCurrentMusic(state)
 
-					local rivals = start.p[side].t_selected[member].rivals
+	state.prevMusic.filename = bgmVar('filename')
+	state.prevMusic.position = bgmVar('position')
+	state.prevMusic.volume = bgmVar('volume')
+	state.prevMusic.loop = bgmVar('loop')
+	state.prevMusic.loopcount = bgmVar('loopcount')
+	state.prevMusic.loopstart = bgmVar('loopstart')
+	state.prevMusic.loopend = bgmVar('loopend')
+	state.prevMusic.freqmul = bgmVar('freqmul')
 
-					local targetOpponent = oppName[pn]
+end
 
-					if rivals and rivals.lookup[targetOpponent] then
-						local rivalID = rivals.lookup[targetOpponent]
-						track = "charparams.rival" .. rivalID
-					end
+local function restoreMusic(state)
 
-					if (track == "charparams.astral" and start.f_getCharData(v.ref)['astral.music']) or track ~= "charparams.astral" then
-						playBgm({
-							source = track,
-							interrupt = true,
-						})
-					else
-						AstralHeatState[pn] = 0
-					end
-			
-				elseif var(20) ~= 1 then
-					AstralHeatBGMPlayed[pn] = false
-				end
+	local music = state.prevMusic
 
-				if var(20) == 1 and (stateNo() < 3900 or stateNo() > 3999) and roundState() == 2 and AstralHeatState[pn] == 1 then
-					dur = 50
+	playBgm({
+		bgm = music.filename,
+		volume = 0,
+		loop = music.loop,
+		loopcount = music.loopcount,
+		loopstart = music.loopstart,
+		loopend = music.loopend,
+		startposition = music.position,
+		freqmul = music.freqmul,
+	})
 
-					AstralHeatState[pn] = 2
-					AstralMusicFade[pn] = fightTime()
-					fadeStartVol = bgmVar('volume')
-					printConsole(fadeStartVol)
-				end
-				if AstralHeatState[pn] == 2 then
-					local t = math.min(dur, fightTime() - AstralMusicFade[pn])
-					local fadeVol = math.floor(fadeStartVol * math.max(0.0, 1.0 - t / dur))
-					playBgm({volume = fadeVol, interrupt = false})
-					-- updateVolume()
-					printConsole(math.floor(fadeVol))
-					if fadeVol == 0 then
-						playBgm({
-							bgm = PrevMusic["filename"],
-							volume = fadeVol,
-							loop = PrevMusic["loop"],
-							loopcount = PrevMusic["loopcount"],
-							loopstart = PrevMusic["loopstart"],
-							loopend = PrevMusic["loopend"],
-							startposition = PrevMusic["position"],
-							freqmul = PrevMusic["freqmul"],
-						}) -- replay previous music and fade it in
-						AstralHeatState[pn] = 3
-						AstralMusicFade[pn] = fightTime()
-						fadeStartVol = PrevMusic["volume"]
-						printConsole(fadeStartVol)
-					end
-				end
-				if AstralHeatState[pn] == 3 then
-					local t = math.min(dur, fightTime() - AstralMusicFade[pn])
-					local fadeVol = math.floor(fadeStartVol * math.min(1.0, t / dur))
-					playBgm({volume = fadeVol, interrupt = false})
-					-- updateVolume()
-					printConsole(fadeVol)
-					if t >= dur then
-						AstralHeatState[pn] = 0
-						AstralMusicFade[pn] = nil
-						fadeStartVol = nil
-					end
-				end
-			end
+end
+
+local function getAstralTrack(playerData,state)
+
+	local track = "charparams.astral"
+	local rivals = playerData.rivals
+
+	if rivals then
+		local rival = rivals.lookup[state.opponent]
+		if rival then
+			track = rival.track
 		end
+	end
+
+	return track
+
+end
+
+local function startAstral(playerData,state,pn)
+
+	saveCurrentMusic(state)
+	enemyNear(0)
+	state.opponent = name()
+
+	player(pn)
+
+	local track =
+		getAstralTrack(
+			playerData,
+			state
+		)
+
+	local isDefault = track == "charparams.astral"
+
+	if isDefault
+	and not playerData.pdata["astral.music"] then
+		state.state = STATE_IDLE
+		return false
+	end
+
+	playBgm({
+		source = track,
+		interrupt = true,
+	})
+
+	state.state = STATE_PLAYING
+	state.played = true
+
+	return true
+
+end
+
+local function checkAstral(playerData)
+
+	local pn = playerData.pn
+	local state = getPlayerState(pn)
+
+	if state.played then
+		return
+	end
+
+	if roundState() ~= 2 then
+		return
+	end
+
+	if not moveHitVar('frame') then
+		return
+	end
+
+	local stateno = stateNo()
+
+	if stateno < ASTRAL_FIRST
+	or stateno > ASTRAL_LAST then
+		return
+	end
+
+	local author = playerData.pdata.author
+
+	if not VALID_AUTHORS[author] then
+		return
+	end
+
+	player(pn)
+
+	if playerNo() ~= teamLeader() then
+		return
+	end
+
+	startAstral(playerData,state,pn)
+
+end
+
+local BGMVolumeUpdate = {
+	volume = 0,
+	interrupt = false,
+}
+
+local function beginFadeOut(state)
+
+	state.state = STATE_FADE_OUT
+	state.fadeFrame = fightTime()
+	state.fadeStart = bgmVar('volume')
+
+end
+
+local function updateFadeOut(state)
+
+	local elapsed = fightTime() - state.fadeFrame
+	local progress = min(elapsed / FADE_TIME, 1)
+	local volume = floor(state.fadeStart * max(0, 1 - progress))
+
+	BGMVolumeUpdate.volume = volume
+
+	playBgm(BGMVolumeUpdate)
+
+	if volume <= 0 then
+		restoreMusic(state)
+
+		state.state = STATE_FADE_IN
+		state.fadeFrame = fightTime()
+		state.fadeStart = state.prevMusic.volume
+	end
+end
+
+local function updateFadeIn(state)
+
+	local elapsed = fightTime() - state.fadeFrame
+	local progress = min(elapsed / FADE_TIME, 1)
+	local volume = floor(state.fadeStart * progress)
+
+	BGMVolumeUpdate.volume = volume
+
+	playBgm(BGMVolumeUpdate)
+
+	if progress >= 1 then
+		state.state = STATE_IDLE
+		state.fadeFrame = 0
+		state.fadeStart = 0
+	end
+end
+
+local function updatePlayer(playerData)
+
+	local pn = playerData.pn
+
+	player(pn)
+
+	local state = getPlayerState(pn)
+
+	if roundState() <= 1 then
+		state.state = STATE_IDLE
+		state.played = false
+	end
+
+	if state.state == STATE_IDLE then
+		checkAstral(playerData)
+	end
+
+	if state.state == STATE_PLAYING then
+		local stateno = stateNo()
+
+		if var(20) == 1
+		and (stateno < ASTRAL_FIRST or stateno > ASTRAL_LAST)
+		and roundState() == 2 then
+			beginFadeOut(state)
+		end
+	end
+
+	if state.state == STATE_FADE_OUT then
+		updateFadeOut(state)
+	elseif state.state == STATE_FADE_IN then
+		updateFadeIn(state)
+	end
+end
+
+local PreviousFightTime = -1
+
+local function f_AstralHeatBGM()
+
+	local time = fightTime()
+
+	if time == 1 and PreviousFightTime ~= 1 then
+		resetMatch()
+		initializeMatch()
+	end
+	PreviousFightTime = time
+
+	if not Initialized then
+		return
+	end
+
+	for i = 1,#ActivePlayers do
+		updatePlayer(ActivePlayers[i])
 	end
 end
 
