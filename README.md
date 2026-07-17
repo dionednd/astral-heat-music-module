@@ -48,7 +48,7 @@ astral.volume
 astral.loop
 astral.loopstart
 astral.loopend
-astral.btartposition
+astral.startposition
 astral.freqmul
 astral.loopcount
 
